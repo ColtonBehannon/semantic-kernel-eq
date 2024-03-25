@@ -14,7 +14,7 @@ load_dotenv()
 
 async def main():
     kernel = sk.Kernel()
-    deployment, key, endpoint, api_version = sk.azure_openai_settings_from_dot_env(include_api_version=True)
+    deployment, key, endpoint = sk.azure_openai_settings_from_dot_env()
     service_id = "chat-gpt"
     kernel.add_service(
         AzureChatCompletion(
@@ -22,7 +22,7 @@ async def main():
             deployment_name=deployment,
             api_key=key,
             endpoint=endpoint,
-            api_version=api_version,
+            # api_version=api_version,
         ),
     )
     connector = BingConnector(api_key=os.getenv("BING_API_KEY"))

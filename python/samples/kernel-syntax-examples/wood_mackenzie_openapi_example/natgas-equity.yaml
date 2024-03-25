@@ -1,0 +1,684 @@
+openapi: 3.0.1
+info:
+  title: Equity Insight
+  description: "Oil and natural gas production data for company assets.\nThis data currently includes: \n* Production by producer\n* Producer metadata\n* Earnings Call Notes"
+  version: '1.0'
+servers:
+  - url: https://api.genscape.com/natgas/equity
+paths:
+  /v1/production-by-producer:
+    get:
+      tags:
+        - Natural Gas
+        - Production
+        - Equity Insight
+      summary: Production by Producer
+      description: "Daily production estimates, Genscape samples, and rig counts for E&P companies and their respective regions across the US. History is included back to 1/1/2011 but varies by item. Data is updated every Monday around noon ET. \n *All updates subject to holiday delays - refer to the Holiday delay schedule for rescheduled publication dates"
+      operationId: GetProductionByProducer
+      parameters:
+        - name: reportDate
+          in: query
+          description: 'Format - date (as full-date in RFC3339). Date the report was published on. Entered in date format `2020-04-07`. Reports are generally published on Wednesday of each week. If no reportDate is passed, data from the most recent report will be returned.'
+          schema:
+            type: string
+            format: date
+        - name: minDate
+          in: query
+          description: Format - date (as full-date in RFC3339). Earliest date of estimate. Entered in date format. Entered in date format `2015-06-01`.
+          schema:
+            type: string
+            format: date
+        - name: maxDate
+          in: query
+          description: Format - date (as full-date in RFC3339). Latest date of estimate. Entered in date format. Entered in date format `2015-06-01`.
+          schema:
+            type: string
+            format: date
+        - name: regionName
+          in: query
+          description: 'Acceptable values:`appalachia`, `fayetteville`, `bakken`, `gulfCoast`, `permian`, `midContinent`, `rockies`, `unitedStates`, `westCanada`, `southTexas`.'
+          schema:
+            type: string
+        - name: companyIds
+          in: query
+          description: Multiple values accepted. Genscape unique id for producer. Can pass multiple IDs.
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+        - name: companyAssetIds
+          in: query
+          description: Multiple values accepted. Genscape unique id for company asset. Can pass multiple IDs.
+          schema:
+            type: array
+            items:
+              type: integer
+              format: int64
+        - name: items
+          in: query
+          description: 'Name of item returned. Multiple values accepted. Acceptable values include `crudeOilProduction`, `sampleCrudeOilProduction`, `dryGasProduction`, `sampleDryGasProduction`,  `wetGasProduction`, `sampleWetGasProduction`, `combinedCommodityStreamProduction`, `sampleCombinedCommodityStreamProduction`, `combinedOilandGasRigCount`, `residueGas`, `inletCapacity`.'
+          schema:
+            type: array
+            items:
+              type: string
+        - name: limit
+          in: query
+          description: 'Format - int64. The limit depends on the `format` parameter: For `json` the maximum value is 1,000; for `csv` the maximum value is `5,000`. When provided, **only** the specified number _(1-1000) or (1-5,000)_ of records will be provided. This value is used to help implement paging through results. When this parameter is not provided, only 500 records will be returned.'
+          schema:
+            type: integer
+            format: int64
+        - name: offset
+          in: query
+          description: 'Format - int64. When provided, the specified number of records will be skipped. This value should be provided when wishing to page through results. When not provided, the returned records will start with the first record.'
+          schema:
+            minimum: 0
+            type: integer
+            format: int64
+            default: 0
+        - name: format
+          in: query
+          description: Specify the format of the response data
+          schema:
+            enum:
+              - json
+              - csv
+            type: string
+            default: json
+      responses:
+        '200':
+          description: Production by Producer
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V1Production-by-producerGet200ApplicationJsonResponse'
+              example:
+                data:
+                  - reportDate: '2020-01-02'
+                    companyAsset: Alta Resources - Marcellus Anadarko Legacy
+                    item: Combined Oil and Gas Rig Count
+                    date: '2010-12-31'
+                    value: 123.4
+                    regionName: Appalachia
+                    companyName: Alta Resources
+                  - reportDate: '2020-01-02'
+                    companyAsset: Ascent - Ohio
+                    item: Combined Oil and Gas Rig Count
+                    date: '2010-12-31'
+                    value: 123.4
+                    regionName: Appalachia
+                    companyName: Ascent
+            text/csv:
+              schema:
+                $ref: '#/components/schemas/V1Production-by-producerGet200TextCsvResponse'
+              examples:
+                default:
+                  value: 
+  /v1/producer-assets:
+    get:
+      tags:
+        - Natural Gas
+        - Production
+        - Equity Insight
+      summary: Producer Asset Metadata
+      description: Metadata for producers and assets as part of the equity insight production by producer report. assetIDs and companyIds can be passed as parameters to the Production by Producer endpoint.
+      operationId: GetProducerAssets
+      parameters:
+        - name: regionName
+          in: query
+          description: 'Acceptable values:`appalachia`, `fayetteville`, `bakken`, `gulfCoast`, `permian`, `midContinent`, `rockies`, `unitedStates`, `westCanada`, `southTexas`.'
+          schema:
+            type: string
+        - name: assetType
+          in: query
+          description: 'Acceptable values include `companyAsset`, `processingPlant`, `processingPlantComplex`.'
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: 'Format - int64. When provided, only the specified number _(1, 1000)_ of records will be provided.'
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+            format: int64
+            default: 500
+        - name: offset
+          in: query
+          description: 'Format - int64. When provided, the specified number of records will be skipped. This value should be provided when wishing to page through results. When not provided, the returned records will start with the first record.'
+          schema:
+            minimum: 0
+            type: integer
+            format: int64
+            default: 0
+        - name: format
+          in: query
+          description: Specify the format of the response data
+          schema:
+            enum:
+              - json
+              - csv
+            type: string
+            default: json
+      responses:
+        '200':
+          description: Producer Assets
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V1Producer-assetsGet200ApplicationJsonResponse'
+              example:
+                data:
+                  - assetId: 188
+                    assetName: Alta Resources - Marcellus Anadarko Legacy
+                    companyId: 380
+                    companyName: Alta Resources
+                    regionId: 466
+                    regionName: Appalachia
+                  - assetId: 192
+                    assetName: Antero Resources - Marcellus and Utica
+                    companyId: 383
+                    companyName: Antero Resources
+                    regionId: 466
+                    regionName: Appalachia
+            text/csv:
+              schema:
+                $ref: '#/components/schemas/V1Producer-assetsGet200TextCsvResponse'
+              examples:
+                default:
+                  value: 
+  /v1/earnings-call-notes:
+    get:
+      tags:
+        - Natural Gas
+        - Equity Insight
+        - Earnings Call
+      summary: Earnings Call Notes
+      description: "Notes compiled by our analysts while attending earnings calls for natural gas-related entities. There may be multiple note records for each earnings call and category.\nData is updated on an ad-hoc basis and may lag behind the earnings calls."
+      operationId: GetEarningsCallNotes
+      parameters:
+        - name: ticker
+          in: query
+          description: 'The ticker symbol for the company. This value is case-insensitive, so both ''BP'' and ''bp'' will match ''BP''.'
+          schema:
+            type: string
+        - name: quarter
+          in: query
+          description: 'The name of the quarter for which the earnings call was held. Values must be in the format ''YYYY-Q#''. This value is case-insensitive and the ''Q'' is optional. All of the following are valid examples: ''2022-1'', ''2022-q1'', ''2022-Q1''.'
+          schema:
+            type: string
+        - name: text
+          in: query
+          description: 'A search term to be used to search through the text of the notes. This value is case-insensitive and can include ''_'' to match any single character and ''%'' to match any number of characters. All input values which do not already start and end with ''%'' will have it added to make sure that the whole of the Notes field is searched. These are all equivalent: ''majeure'', ''%majeure'', ''MAJEURE%'' and ''%MaJeUrE%''.'
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          description: Format - date (as full-date in RFC3339). The inclusive beginning of the range of dates when the earnings call occurred.
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: Format - date (as full-date in RFC3339). The exclusive end of the range of dates when the earnings call occurred.
+          schema:
+            type: string
+            format: date
+        - name: important
+          in: query
+          description: 'When this flag is ''true'', only records noted as important will be included in the response.'
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          description: 'Format - int64. When provided, **only** the specified number _(0-5000)_ of records will be provided. This value is used to help implement paging through results. When this parameter is not provided, only 200 records will be returned'
+          schema:
+            maximum: 5000
+            minimum: 1
+            type: integer
+            format: int64
+            default: 200
+        - name: offset
+          in: query
+          description: 'Format - int64. When provided, the specified number of records will be skipped. This value should be provided when wishing to page through results. When not provided, the returned records will start with the first record.'
+          schema:
+            minimum: 0
+            type: integer
+            format: int64
+            default: 0
+        - name: format
+          in: query
+          description: Specify the format of the response data
+          schema:
+            enum:
+              - json
+              - csv
+            type: string
+            default: json
+      responses:
+        '200':
+          description: Earnings Call Notes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/V1Earnings-call-notesGet200ApplicationJsonResponse'
+              example:
+                data:
+                  - date: '2020-01-01'
+                    endingYear: '2020'
+                    endingQuarter: Q4
+                    ticker: NUGAS
+                    category: General
+                    notes: We built a thing
+                    important: true
+            text/csv:
+              schema:
+                $ref: '#/components/schemas/V1Earnings-call-notesGet200TextCsvResponse'
+              examples:
+                default:
+                  value: 
+components:
+  schemas:
+    ProducerAssetResponse:
+      allOf:
+        - type: object
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  assetId:
+                    type: integer
+                    description: Asset ID.
+                    format: int64
+                  assetName:
+                    type: string
+                    description: Asset name.
+                  companyId:
+                    type: integer
+                    description: Company ID.
+                    format: int64
+                  companyName:
+                    type: string
+                    description: Company name.
+                  regionId:
+                    type: integer
+                    description: Region ID.
+                    format: int64
+                  regionName:
+                    type: string
+                    description: Region name.
+    ProducerAssetValue:
+      type: object
+      properties:
+        assetId:
+          type: integer
+          description: Asset ID.
+          format: int64
+        assetName:
+          type: string
+          description: Asset name.
+        companyId:
+          type: integer
+          description: Company ID.
+          format: int64
+        companyName:
+          type: string
+          description: Company name.
+        regionId:
+          type: integer
+          description: Region ID.
+          format: int64
+        regionName:
+          type: string
+          description: Region name.
+    ProductionByProducerResponse:
+      allOf:
+        - type: object
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  reportDate:
+                    type: string
+                    description: Date when the report was created. Reports generally are created every Wednesday.
+                    format: date
+                  companyAsset:
+                    type: string
+                    description: The producer and owned asset.
+                  item:
+                    type: string
+                    description: The name of the item being reported.
+                  date:
+                    type: string
+                    description: The date of the estimate. Data is included back to 2011 and goes until the latest report date.
+                    format: date
+                  value:
+                    type: number
+                    description: All production is converted to MMcfe/d reported to 3 decimal places.
+                    format: float
+                  regionName:
+                    type: string
+                    description: Region name.
+                  companyName:
+                    type: string
+                    description: The name of the company.
+    ProductionByProducerValue:
+      type: object
+      properties:
+        reportDate:
+          type: string
+          description: Date when the report was created. Reports generally are created every Wednesday.
+          format: date
+        companyAsset:
+          type: string
+          description: The producer and owned asset.
+        item:
+          type: string
+          description: The name of the item being reported.
+        date:
+          type: string
+          description: The date of the estimate. Data is included back to 2011 and goes until the latest report date.
+          format: date
+        value:
+          type: number
+          description: All production is converted to MMcfe/d reported to 3 decimal places.
+          format: float
+        regionName:
+          type: string
+          description: Region name.
+        companyName:
+          type: string
+          description: The name of the company.
+    EarningsCallNotesResponse:
+      allOf:
+        - type: object
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    description: The date on which the earnings call occurred.
+                    format: date
+                  endingYear:
+                    type: string
+                    description: The year for which the earnings call was held.
+                  endingQuarter:
+                    enum:
+                      - ''
+                      - Q1
+                      - Q2
+                      - Q3
+                      - Q4
+                    type: string
+                    description: The quarter for which the earnings call was held.
+                  ticker:
+                    type: string
+                    description: The ticker symbol for the entity holding the earnings call.
+                  category:
+                    type: string
+                    description: The category into which the note was placed by our analyst. Note that this value is free-text and that there may be multiple notes for each category in an earnings call.
+                  notes:
+                    type: string
+                    description: The text of the note generated by our analyst.
+                  important:
+                    type: boolean
+                    description: This record has been flagged as important by our analyst.
+    EarningsCallNote:
+      type: object
+      properties:
+        date:
+          type: string
+          description: The date on which the earnings call occurred.
+          format: date
+        endingYear:
+          type: string
+          description: The year for which the earnings call was held.
+        endingQuarter:
+          enum:
+            - ''
+            - Q1
+            - Q2
+            - Q3
+            - Q4
+          type: string
+          description: The quarter for which the earnings call was held.
+        ticker:
+          type: string
+          description: The ticker symbol for the entity holding the earnings call.
+        category:
+          type: string
+          description: The category into which the note was placed by our analyst. Note that this value is free-text and that there may be multiple notes for each category in an earnings call.
+        notes:
+          type: string
+          description: The text of the note generated by our analyst.
+        important:
+          type: boolean
+          description: This record has been flagged as important by our analyst.
+    V1Production-by-producerGet200ApplicationJsonResponse:
+      allOf:
+        - type: object
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  reportDate:
+                    type: string
+                    description: Date when the report was created. Reports generally are created every Wednesday.
+                    format: date
+                  companyAsset:
+                    type: string
+                    description: The producer and owned asset.
+                  item:
+                    type: string
+                    description: The name of the item being reported.
+                  date:
+                    type: string
+                    description: The date of the estimate. Data is included back to 2011 and goes until the latest report date.
+                    format: date
+                  value:
+                    type: number
+                    description: All production is converted to MMcfe/d reported to 3 decimal places.
+                    format: float
+                  regionName:
+                    type: string
+                    description: Region name.
+                  companyName:
+                    type: string
+                    description: The name of the company.
+    V1Production-by-producerGet200TextCsvResponse:
+      allOf:
+        - type: object
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  reportDate:
+                    type: string
+                    description: Date when the report was created. Reports generally are created every Wednesday.
+                    format: date
+                  companyAsset:
+                    type: string
+                    description: The producer and owned asset.
+                  item:
+                    type: string
+                    description: The name of the item being reported.
+                  date:
+                    type: string
+                    description: The date of the estimate. Data is included back to 2011 and goes until the latest report date.
+                    format: date
+                  value:
+                    type: number
+                    description: All production is converted to MMcfe/d reported to 3 decimal places.
+                    format: float
+                  regionName:
+                    type: string
+                    description: Region name.
+                  companyName:
+                    type: string
+                    description: The name of the company.
+    V1Producer-assetsGet200ApplicationJsonResponse:
+      allOf:
+        - type: object
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  assetId:
+                    type: integer
+                    description: Asset ID.
+                    format: int64
+                  assetName:
+                    type: string
+                    description: Asset name.
+                  companyId:
+                    type: integer
+                    description: Company ID.
+                    format: int64
+                  companyName:
+                    type: string
+                    description: Company name.
+                  regionId:
+                    type: integer
+                    description: Region ID.
+                    format: int64
+                  regionName:
+                    type: string
+                    description: Region name.
+    V1Producer-assetsGet200TextCsvResponse:
+      allOf:
+        - type: object
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  assetId:
+                    type: integer
+                    description: Asset ID.
+                    format: int64
+                  assetName:
+                    type: string
+                    description: Asset name.
+                  companyId:
+                    type: integer
+                    description: Company ID.
+                    format: int64
+                  companyName:
+                    type: string
+                    description: Company name.
+                  regionId:
+                    type: integer
+                    description: Region ID.
+                    format: int64
+                  regionName:
+                    type: string
+                    description: Region name.
+    V1Earnings-call-notesGet200ApplicationJsonResponse:
+      allOf:
+        - type: object
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    description: The date on which the earnings call occurred.
+                    format: date
+                  endingYear:
+                    type: string
+                    description: The year for which the earnings call was held.
+                  endingQuarter:
+                    enum:
+                      - ''
+                      - Q1
+                      - Q2
+                      - Q3
+                      - Q4
+                    type: string
+                    description: The quarter for which the earnings call was held.
+                  ticker:
+                    type: string
+                    description: The ticker symbol for the entity holding the earnings call.
+                  category:
+                    type: string
+                    description: The category into which the note was placed by our analyst. Note that this value is free-text and that there may be multiple notes for each category in an earnings call.
+                  notes:
+                    type: string
+                    description: The text of the note generated by our analyst.
+                  important:
+                    type: boolean
+                    description: This record has been flagged as important by our analyst.
+    V1Earnings-call-notesGet200TextCsvResponse:
+      allOf:
+        - type: object
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                properties:
+                  date:
+                    type: string
+                    description: The date on which the earnings call occurred.
+                    format: date
+                  endingYear:
+                    type: string
+                    description: The year for which the earnings call was held.
+                  endingQuarter:
+                    enum:
+                      - ''
+                      - Q1
+                      - Q2
+                      - Q3
+                      - Q4
+                    type: string
+                    description: The quarter for which the earnings call was held.
+                  ticker:
+                    type: string
+                    description: The ticker symbol for the entity holding the earnings call.
+                  category:
+                    type: string
+                    description: The category into which the note was placed by our analyst. Note that this value is free-text and that there may be multiple notes for each category in an earnings call.
+                  notes:
+                    type: string
+                    description: The text of the note generated by our analyst.
+                  important:
+                    type: boolean
+                    description: This record has been flagged as important by our analyst.
+  securitySchemes:
+    apiKeyHeader:
+      type: apiKey
+      name: Gen-Api-Key
+      in: header
+    apiKeyQuery:
+      type: apiKey
+      name: genApiKey
+      in: query
+security:
+  - apiKeyHeader: [ ]
+  - apiKeyQuery: [ ]

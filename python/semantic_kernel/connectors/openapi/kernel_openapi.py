@@ -1,3 +1,5 @@
+print(f"Using kernel_openapi.py from: {__file__}")
+
 import json
 import logging
 import sys
@@ -46,9 +48,25 @@ class PreparedRestApiRequest:
             f"request_body={self.request_body})"
         )
 
+    # def validate_request(self, spec: Spec, **kwargs):
+    #     if kwargs.get("logger"):
+    #         logger.warning("The `logger` parameter is deprecated. Please use the `logging` module instead.")
+    #     request = requests.Request(
+    #         self.method,
+    #         self.url,
+    #         params=self.params,
+    #         headers=self.headers,
+    #         json=self.request_body,
+    #     )
+    #     openapi_request = RequestsOpenAPIRequest(request=request)
+    #     try:
+    #         unmarshal_request(openapi_request, spec=spec)
+    #         return True
+    #     except OpenAPIError as e:
+    #         logger.debug(f"Error validating request: {e}", exc_info=True)
+    #         return False
+
     def validate_request(self, spec: Spec, **kwargs):
-        if kwargs.get("logger"):
-            logger.warning("The `logger` parameter is deprecated. Please use the `logging` module instead.")
         request = requests.Request(
             self.method,
             self.url,
@@ -61,7 +79,13 @@ class PreparedRestApiRequest:
             unmarshal_request(openapi_request, spec=spec)
             return True
         except OpenAPIError as e:
-            logger.debug(f"Error validating request: {e}", exc_info=True)
+            # Print detailed error information
+            print(f"Error validating request: {e}")
+            print(f"Request method: {self.method}")
+            print(f"Request URL: {self.url}")
+            print(f"Request params: {self.params}")
+            print(f"Request headers: {self.headers}")
+            print(f"Request body: {self.request_body}")
             return False
 
 
@@ -102,7 +126,20 @@ class RestApiOperation:
         if path_params:
             path = path.format(**path_params)
 
-        url = urljoin(self.server_url, path)
+        # Default behavior
+        # url = urljoin(self.server_url, path)
+
+        # Manually concatenate the server URL and path, ensuring correct handling of slashes
+        if not self.server_url.endswith("/"):
+            self.server_url += "/"
+        if path.startswith("/"):
+            path = path.lstrip("/")
+        url = self.server_url + path
+
+        # Debug print statement to check the full URL
+        print(f"URL being used for request: {self.server_url}")
+        print(f"Path being used for request: {path}")
+        print(f"Full URL being used for request: {url}")
 
         processed_query_params, processed_headers = {}, headers
         for param in self.params:
@@ -186,6 +223,7 @@ class OpenApiParser:
             for method, details in methods.items():
                 server_url = parsed_document.get("servers", [])
                 server_url = server_url[0].get("url") if server_url else "/"
+                print(f"Extracted server URL: {server_url}")  # Debug print statement
 
                 request_method = method.lower()
 
@@ -216,6 +254,36 @@ class OpenApiRunner:
     ):
         self.spec = Spec.from_dict(parsed_openapi_document)
 
+    # async def run_operation(
+    #     self,
+    #     operation: RestApiOperation,
+    #     path_params: Optional[Dict[str, str]] = None,
+    #     query_params: Optional[Dict[str, str]] = None,
+    #     headers: Optional[Dict[str, str]] = None,
+    #     request_body: Optional[Union[str, Dict[str, str]]] = None,
+    # ) -> str:
+    #     prepared_request = operation.prepare_request(
+    #         path_params=path_params,
+    #         query_params=query_params,
+    #         headers=headers,
+    #         request_body=request_body,
+    #     )
+    #     is_valid = prepared_request.validate_request(spec=self.spec)
+    #     if not is_valid:
+    #         return None
+
+    #     async with aiohttp.ClientSession(raise_for_status=True) as session:
+    #         async with session.request(
+    #             prepared_request.method,
+    #             prepared_request.url,
+    #             params=prepared_request.params,
+    #             headers=prepared_request.headers,
+    #             json=prepared_request.request_body,
+    #         ) as response:
+    #             response_text = await response.text()
+    #             print("Raw API Response:", response_text)  # Print the raw response
+    #             return response_text
+
     async def run_operation(
         self,
         operation: RestApiOperation,
@@ -232,6 +300,7 @@ class OpenApiRunner:
         )
         is_valid = prepared_request.validate_request(spec=self.spec)
         if not is_valid:
+            print("Request validation failed")  # Confirm validation result
             return None
 
         async with aiohttp.ClientSession(raise_for_status=True) as session:
@@ -242,7 +311,9 @@ class OpenApiRunner:
                 headers=prepared_request.headers,
                 json=prepared_request.request_body,
             ) as response:
-                return await response.text()
+                response_text = await response.text()
+                print("Raw API Response:", response_text)  # Print the raw response
+                return response_text
 
 
 """
